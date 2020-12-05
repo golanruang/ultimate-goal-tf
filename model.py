@@ -18,16 +18,20 @@ for folder in os.listdir(path):
     if not folder.startswith('.'):
         if folder=="threepics":
             for file in os.listdir(path+"/threepics"):
-                print(file)
+                print("done 3")
                 print(cv2.imread(path+"/threepics/"+file))
-                img.append(cv2.imread(path+"threepics/"+file))
+                img.append(cv2.imread(path+"/threepics/"+file))
                 labels.append("three")
         if folder=="onepics":
             for file in os.listdir(path+"/onepics"):
+                print("done 1")
+                print(cv2.imread(path+"/onepics/"+file))
                 img.append(cv2.imread(path+"/onepics/"+file))
                 labels.append("one")
         if folder=="zeropics":
             for file in os.listdir(path+"/zeropics"):
+                print("done 0")
+                print(cv2.imread(path+"/zeropics/"+file))
                 img.append(cv2.imread(path+"/zeropics/"+file))
                 labels.append("zero")
 

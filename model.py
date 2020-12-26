@@ -1,8 +1,11 @@
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.models import Sequential
 
 import numpy as np
 import matplotlib.pyplot as plt
+
 from os import listdir
 from os.path import isfile, join, expanduser
 import os
@@ -10,53 +13,81 @@ import subprocess
 import random
 
 import cv2
+import PIL
 
-path = "/volumes/RGUSB/ftc-tensorflow-data"
 img=[]
 labels=[]
+path = "/volumes/RolanG/Tests/"
+
+# get images and labels
+
 for folder in os.listdir(path):
     if not folder.startswith('.'):
-        if folder=="threepics":
-            for file in os.listdir(path+"/threepics"):
-                print("done 3")
-                print(cv2.imread(path+"/threepics/"+file))
-                img.append(cv2.imread(path+"/threepics/"+file))
-                labels.append("three")
-        if folder=="onepics":
-            for file in os.listdir(path+"/onepics"):
-                print("done 1")
-                print(cv2.imread(path+"/onepics/"+file))
-                img.append(cv2.imread(path+"/onepics/"+file))
-                labels.append("one")
-        if folder=="zeropics":
-            for file in os.listdir(path+"/zeropics"):
-                print("done 0")
-                print(cv2.imread(path+"/zeropics/"+file))
-                img.append(cv2.imread(path+"/zeropics/"+file))
-                labels.append("zero")
+        for file in os.listdir(path+folder):
+            image=cv2.imread(path+folder+"/"+file,cv2.COLOR_BGR2HSV) # converting image to HSV
+            if image is not None:
+                image=image.astype("float32")
+                resized_image=cv2.resize(image,(270,480))
+                img.append(resized_image)
+                if folder=="threepics":
+                    labels.append(2)
+                if folder=="onepics":
+                    labels.append(1)
+                if folder=="zeropics":
+                    labels.append(0)
 
 #print(img)
 #print(labels)
-#print(img)
-data=list(zip(img,labels))
 
-lenLists=len(data)
+# works!
+# train test split
+lenImgs=len(img)
 
-test=data[:int(lenLists/5)]
-train=data[int(lenLists/5):]
+train_images=np.array(img[int(lenImgs/5):])
+test_images=np.array(img[:int(lenImgs/5)])
+train_labels=np.array(labels[int(lenImgs/5):])
+test_labels=np.array(labels[:int(lenImgs/5)])
 
-testImgs=list(list(zip(*test))[0])
-testLabels=list(list(zip(*test))[1])
+# print(len(train_images))
+# print(len(test_images))
+#
+# for img in train_images:
+#     print("shape: ", img.shape)
+#print("shape: ", test_images[0].shape)
 
-trainImgs=list(list(zip(*train))[0])
-trainLabels=list(list(zip(*test))[1])
+# train-test split works
+# time to create model
+
+class_names=['three','one','zero']
+num_classes=len(class_names)
+
+# new model's sequential
+# model = Sequential([
+#   layers.experimental.preprocessing.Rescaling(1./255, input_shape=(480, 270, 3)),
+#   # layers.Conv2D(16, 3, padding='same', activation='relu'),
+#   # layers.MaxPooling2D(),
+#   # layers.Conv2D(32, 3, padding='same', activation='relu'),
+#   # layers.MaxPooling2D(),
+#   # layers.Conv2D(64, 3, padding='same', activation='relu'),
+#   # layers.MaxPooling2D(),
+#   layers.Flatten(),
+#   layers.Dense(128, activation='relu'),
+#   layers.Dense(num_classes)
+# ])
 
 model = tf.keras.models.Sequential([
-  tf.keras.layers.Flatten(input_shape=(128, 128)),
-  tf.keras.layers.Dense(192, activation='relu'),
+  tf.keras.layers.Flatten(),
+  tf.keras.layers.Dense(32,activation='relu'),
+#  tf.keras.layers.Dense(192, activation='relu'), # have to be 192?
+
   tf.keras.layers.Dropout(0.2),
   tf.keras.layers.Dense(3)
 ])
+
+# new model's compile
+# model.compile(optimizer='adam',
+#               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+#               metrics=['accuracy'])
 
 model.compile(
     loss='sparse_categorical_crossentropy',
@@ -64,11 +95,29 @@ model.compile(
     metrics=['accuracy'],
 )
 
+# model.summary()
+# old model.fit
+# epochs=10
+#
+# history = model.fit(
+#   train_images,
+#   validation_data=train_labels,
+#   epochs=epochs
+# )
+
 model.fit(
-    trainImgs,
+    np.array(train_images),
+    np.array(train_labels),
     epochs=6,
-    validation_data=trainLabels,
 )
 
-results=model.evaluate(testImgs,  testLabels)
+results = model.evaluate(test_images,  test_labels)
+
 print(results)
+
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+tflite_model = converter.convert()
+
+# Save the model.
+with open('model.tflite', 'wb') as f:
+  f.write(tflite_model)

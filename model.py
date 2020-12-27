@@ -17,7 +17,7 @@ import PIL
 
 img=[]
 labels=[]
-path = "/volumes/RolanG/Tests/"
+path = "/volumes/RolanG/ftc-tensorflow-data/"
 
 # get images and labels
 
@@ -27,7 +27,9 @@ for folder in os.listdir(path):
             image=cv2.imread(path+folder+"/"+file,cv2.COLOR_BGR2HSV) # converting image to HSV
             if image is not None:
                 image=image.astype("float32")
-                resized_image=cv2.resize(image,(270,480))
+                # resized to squre because algorithms are optimized for squares
+                # could also be (256,256)
+                resized_image=cv2.resize(image,(231,231))
                 img.append(resized_image)
                 if folder=="threepics":
                     labels.append(2)
@@ -36,52 +38,50 @@ for folder in os.listdir(path):
                 if folder=="zeropics":
                     labels.append(0)
 
-#print(img)
-#print(labels)
-
 # works!
 # train test split
 lenImgs=len(img)
 
+# import random + shuffle them
 train_images=np.array(img[int(lenImgs/5):])
 test_images=np.array(img[:int(lenImgs/5)])
 train_labels=np.array(labels[int(lenImgs/5):])
 test_labels=np.array(labels[:int(lenImgs/5)])
 
-# print(len(train_images))
-# print(len(test_images))
-#
-# for img in train_images:
-#     print("shape: ", img.shape)
-#print("shape: ", test_images[0].shape)
-
 # train-test split works
 # time to create model
 
+  # relu: any negative output gets put to 0
+  # if model works pretty well, probably switch to elu
+
+# might want to preprocess Hue by dividing by 180
 class_names=['three','one','zero']
 num_classes=len(class_names)
 
-# new model's sequential
-# model = Sequential([
-#   layers.experimental.preprocessing.Rescaling(1./255, input_shape=(480, 270, 3)),
-#   # layers.Conv2D(16, 3, padding='same', activation='relu'),
-#   # layers.MaxPooling2D(),
-#   # layers.Conv2D(32, 3, padding='same', activation='relu'),
-#   # layers.MaxPooling2D(),
-#   # layers.Conv2D(64, 3, padding='same', activation='relu'),
-#   # layers.MaxPooling2D(),
-#   layers.Flatten(),
-#   layers.Dense(128, activation='relu'),
-#   layers.Dense(num_classes)
-# ])
-
-model = tf.keras.models.Sequential([
-  tf.keras.layers.Flatten(),
-  tf.keras.layers.Dense(32,activation='relu'),
-#  tf.keras.layers.Dense(192, activation='relu'), # have to be 192?
-
-  tf.keras.layers.Dropout(0.2),
-  tf.keras.layers.Dense(3)
+img_height=231
+img_width=231
+model = Sequential([
+  layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
+  # first num is # filters, kernel size 11x11,
+  layers.Conv2D(16, 11, strides=(4,4), padding='valid', activation='relu'),
+  # 56x56x16 output
+  layers.MaxPooling2D(),
+  # Max pool shrinks output by half
+  # 28x28x16
+  layers.Conv2D(32, 3, strides=(1,1), padding='valid', activation='relu'),
+  # 26x26x32
+  layers.MaxPooling2D(),
+  # 13x13x32
+  layers.Conv2D(64, 5, strides=(1,1), padding='valid', activation='relu'),
+  # 9x9x64
+  layers.MaxPooling2D(pool_size=(3,3)),
+  # 3x3x64
+  layers.Flatten(),
+  # 576 vector
+  layers.Dense(128, activation='relu'),
+  # 128 vector
+  layers.Dense(num_classes)
+  # 3 vector
 ])
 
 # new model's compile
@@ -90,30 +90,34 @@ model = tf.keras.models.Sequential([
 #               metrics=['accuracy'])
 
 model.compile(
-    loss='sparse_categorical_crossentropy',
+    loss='sparse_categorical_crossentropy', # look this up (means you're using a loss calculation)
     optimizer=tf.keras.optimizers.Adam(0.001),
-    metrics=['accuracy'],
+    metrics=['accuracy'],                   # training for accuracy on training set rather than loss on training set (good)
 )
-
-# model.summary()
-# old model.fit
-# epochs=10
-#
-# history = model.fit(
-#   train_images,
-#   validation_data=train_labels,
-#   epochs=epochs
-# )
+# Things to do to increase accuracy:
+# (if good model already) --> switch from relu to elu or leaky relu
+# make sure at end of each epoch u capture loss on training set, accuracy on training set, accuracy on test/validation set
+# graph those three things on same set of axises
+# loss should be dropping asymptotically, accuracy (training) should increase towards 1, accuracy on test set should increase for a while,
+# then start to decrease eventually. When switched from increasing to decreasing, you're overfitting and you stop training there
 
 model.fit(
     np.array(train_images),
     np.array(train_labels),
-    epochs=6,
+    epochs=400,
+    validation_data=(test_images,test_labels)
 )
 
-results = model.evaluate(test_images,  test_labels)
-
-print(results)
+# print("train results: ")
+# results = model.evaluate(train_images,  train_labels)
+#
+# print(results)
+#
+# print("test results: ")
+#
+# results = model.evaluate(test_images,  test_labels)
+#
+# print(results)
 
 converter = tf.lite.TFLiteConverter.from_keras_model(model)
 tflite_model = converter.convert()

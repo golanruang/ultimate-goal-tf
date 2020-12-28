@@ -89,11 +89,15 @@ model = Sequential([
 #               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
 #               metrics=['accuracy'])
 
-model.compile(
-    loss='sparse_categorical_crossentropy', # look this up (means you're using a loss calculation)
-    optimizer=tf.keras.optimizers.Adam(0.001),
-    metrics=['accuracy'],                   # training for accuracy on training set rather than loss on training set (good)
-)
+# model.compile(
+#     loss= tf.keras.losses.SparseCategoricalCrossentropy(), # look this up (means you're using a loss calculation)
+#     optimizer=tf.keras.optimizers.Adam(0.001),
+#     metrics=[tf.keras.metrics.Accuracy()],                   # training for accuracy on training set rather than loss on training set (good)
+# )
+model.compile(optimizer='adam',
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+
 # Things to do to increase accuracy:
 # (if good model already) --> switch from relu to elu or leaky relu
 # make sure at end of each epoch u capture loss on training set, accuracy on training set, accuracy on test/validation set
@@ -104,7 +108,7 @@ model.compile(
 model.fit(
     np.array(train_images),
     np.array(train_labels),
-    epochs=400,
+    epochs=7,
     validation_data=(test_images,test_labels)
 )
 

@@ -108,7 +108,7 @@ model.compile(optimizer='adam',
 model.fit(
     np.array(train_images),
     np.array(train_labels),
-    epochs=7,
+    epochs=12,
     validation_data=(test_images,test_labels)
 )
 

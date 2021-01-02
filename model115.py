@@ -17,7 +17,8 @@ import PIL
 
 img=[]
 labels=[]
-path = "/volumes/RolanG/Tests/"
+path = "/volumes/RolanG/ftc-tensorflow-data/"
+#path = "/volumes/RolanG/Tests/"
 
 # get images and labels
 
@@ -32,7 +33,7 @@ for folder in os.listdir(path):
                 resized_image=cv2.resize(image,(231,231))
                 img.append(resized_image)
                 if folder=="threepics":
-                    labels.append("3")
+                    labels.append("2")
                 if folder=="onepics":
                     labels.append("1")
                 if folder=="zeropics":
@@ -40,6 +41,13 @@ for folder in os.listdir(path):
 
 # works!
 # train test split
+
+for i, pic in enumerate(img):
+    for j, row in enumerate(pic):
+        for k, pixel in enumerate(row):
+            for l, color_value in enumerate(pixel):
+                img[i][j][k][l] = color_value / 255.0
+
 lenImgs=len(img)
 
 # import random + shuffle them
@@ -60,8 +68,11 @@ num_classes=len(class_names)
 
 img_height=231
 img_width=231
+
+scale = 1./255
+
 model = Sequential([
-  layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
+  # layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
   # first num is # filters, kernel size 11x11,
   layers.Conv2D(16, 11, strides=(4,4), padding='valid', activation='relu'),
   # 56x56x16 output
@@ -123,9 +134,11 @@ model.fit(
 #
 # print(results)
 
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
-tflite_model = converter.convert()
+tf.keras.models.save_model(model, 'RGModel.h5')
 
-# Save the model.
-with open('model.tflite', 'wb') as f:
-  f.write(tflite_model)
+# converter = tf.lite.TFLiteConverter.from_keras_model(model)
+# tflite_model = converter.convert()
+#
+# # Save the model.
+# with open('model.tflite', 'wb') as f:
+#   f.write(tflite_model)

@@ -18,7 +18,7 @@ import PIL
 img=[]
 labels=[]
 path = "/volumes/RolanG/ftc-tensorflow-data/"
-#path = "/volumes/RolanG/Tests/"
+# path = "/volumes/RolanG/Tests/"
 
 # get images and labels
 
@@ -74,6 +74,7 @@ scale = 1./255
 model = Sequential([
   # layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
   # first num is # filters, kernel size 11x11,
+  tf.keras.layers.InputLayer(input_shape=(231,231,3)),
   layers.Conv2D(16, 11, strides=(4,4), padding='valid', activation='relu'),
   # 56x56x16 output
   layers.MaxPooling2D(),

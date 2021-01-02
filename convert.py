@@ -13,8 +13,8 @@ import tensorflow.lite as lite
 
 # Convert the model.
 # f = open('RGModel.h5','rb')
-model=tf.keras.models.load_model('RGModel.h5')
-converter = lite.TFLiteConverter.from_keras_model_file(model)
+# model=tf.keras.models.load_model('RGModel.h5')
+converter = lite.TFLiteConverter.from_keras_model_file('RGModel.h5')
 tflite_model = converter.convert()
 open("converted_model.tflite", "wb").write(tflite_model)
 # converter=tf.compat.v1.lite.TFLiteConverter(model)

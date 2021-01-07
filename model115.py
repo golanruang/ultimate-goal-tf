@@ -20,6 +20,9 @@ labels=[]
 path = "/volumes/RolanG/ftc-tensorflow-data/"
 # path = "/volumes/RolanG/Tests/"
 
+
+# write program to test keras model using computer webcam
+
 # get images and labels
 
 for folder in os.listdir(path):
